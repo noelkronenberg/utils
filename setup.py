@@ -16,6 +16,7 @@ setup(
         # visualization
         'matplotlib',
         'seaborn',
+        'plotly',
         # analysis
         'scikit-learn',
         'statsmodels',

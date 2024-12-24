@@ -3,6 +3,7 @@ import numpy as np
 
 import matplotlib.pyplot as plt
 import seaborn as sns
+import plotly.graph_objects as go
 
 import statsmodels.api as sm
 from stepmix import StepMix
@@ -189,7 +190,7 @@ def logit(data: pd.DataFrame, outcome: str, confounders: list, categorical_vars:
     return result
 
 def lca(data: pd.DataFrame, outcome: str = None, confounders: list = None, 
-        n_classes: list = list(range(1,11)), cv: int = 3) -> StepMix:
+        n_classes: list = list(range(1,11)), cv: int = 3, assignments: bool = False, polar_plot: bool = False) -> StepMix:
     """
     Fits a Latent Class Analysis (LCA) model to the given data using `StepMix <https://stepmix.readthedocs.io/en/latest/api.html#stepmix>`_. 
     If no outcome or confounders are provided, an unsupervised approach is used.
@@ -200,9 +201,13 @@ def lca(data: pd.DataFrame, outcome: str = None, confounders: list = None,
         confounders (list, optional): A list of confounders column names to be used in the model. Defaults to None.
         n_classes (list, optional): The number of latent classes to fit. Defaults to a range from 1 to 10.
         cv (int, optional): The number of cross-validation folds for hyperparameter tuning. Defaults to 3.
+        assignments (bool, optional): Whether to return the latent class assignments for the observations. Defaults to False.
+        polar_plot (bool, optional): Whether to plot a polar plot of the latent class assignments. Defaults to False.
 
     Returns:
-        StepMix: The fitted LCA model.
+        StepMix: The fitted LCA model. If `assignments` is True, returns a tuple of (model, data_updated), where:
+            - model (StepMix): The fitted LCA model.
+            - data_updated (pd.DataFrame): The original data with an additional column for latent class assignments.
 
     Examples:
         >>> import pandas as pd
@@ -255,4 +260,116 @@ def lca(data: pd.DataFrame, outcome: str = None, confounders: list = None,
     model = gs.best_estimator_
     logger.info(f'Best model selected based on hyperparameter tuning: {model}')
 
-    return model
+    # predict latent class assignments
+    if assignments or polar_plot:
+
+        # copy data to avoid modifying the original
+        data_updated = data.copy()
+
+        # predict latent class assignments
+        if supervised:
+            predictions = model.predict(X, y)
+            logger.info(f'Predicted {len(predictions)} latent class assignments for supervised LCA model.')
+        else:
+            predictions = model.predict(data)
+            logger.info(f'Predicted {len(predictions)} latent class assignments for unsupervised LCA model.')
+
+        # merge with original data (incremented by 1 to start from 1)
+        data_updated['latent_class'] = predictions + 1
+        logger.info('Merged latent class assignments with observations.')
+    
+    if polar_plot:
+        # use all columns as confounders if not provided
+        if not supervised:
+            confounders = data.columns.tolist()
+            logger.info('Using all columns as confounders for the polar plot in unsupervised LCA model.')
+
+        # calculate prevalence of each latent class
+        class_prevalences = data_updated.groupby('latent_class')[confounders].mean().reset_index()
+        total_prevalences = data_updated[confounders].mean()
+        
+        # normalize prevalences
+        normalized_prevalences = class_prevalences.copy()
+        for confounder in confounders:
+            normalized_prevalences[confounder] = class_prevalences[confounder] / total_prevalences[confounder]
+        
+        logger.info('Calculated normalized prevalence for each confounder in each latent class.')
+
+        # assign latent classes to confounders
+        assigned_classes = {}
+        for confounder in confounders:
+
+            # get the class with the highest value (if not empty)
+            max_value = normalized_prevalences[confounder].max()
+            max_classes = normalized_prevalences[normalized_prevalences[confounder] == max_value]['latent_class'].values
+            
+            if max_classes.size == 0:
+                logger.warning(f'Confounder {confounder} has no classes assigned.')
+                assigned_classes[confounder] = None
+            else:
+                if max_classes.size > 1:
+                    logger.warning(f'Confounder {confounder} has multiple classes with the same normalized prevalence. Choosing the first one.')
+                max_class = max_classes[0]
+                assigned_classes[confounder] = max_class
+                logger.info(f'Assigned latent class {max_class} to confounder {confounder} with normalized prevalence {max_value:.4f}.')
+
+        # plot polar plot
+        fig = go.Figure()
+        for latent_class in sorted(data_updated['latent_class'].unique()):
+
+            # filter data for the latent class
+            class_data = normalized_prevalences[normalized_prevalences['latent_class'] == latent_class]
+            
+            # ensure class_data is not empty
+            if class_data.empty:
+                logger.warning(f'No data available for latent class {latent_class}. Skipping.')
+                continue
+            
+            class_values = class_data[confounders].values.flatten()
+            
+            # add data to graph
+            fig.add_trace(go.Scatterpolar(
+                r=class_values.tolist() + [class_values[0]], # close the shape
+                theta=confounders + [confounders[0]], # close the shape
+                name=f'Latent Class {latent_class}', # name for legend
+                fill='toself', # fill area inside the shape
+            ))
+            logger.info(f'Added polar plot for latent class {latent_class}.')
+
+        # update layout
+        fig.update_layout(
+            polar=dict(
+                # customize the radial axis 
+                radialaxis=dict( 
+                    visible=True,
+                    showline=True, 
+                    linecolor='rgba(0,0,0,0.1)',
+                    gridcolor='rgba(0,0,0,0.1)',
+                ),
+                # customize the angular axis
+                angularaxis=dict(
+                    tickfont=dict(size=24),
+                    linecolor='grey',
+                    gridcolor='rgba(0,0,0,0.1)'
+                ),
+                # customize the background
+                bgcolor='white'
+            ),
+            # customize the legend
+            showlegend=True,
+            legend=dict(
+                font=dict(size=24),
+            ),
+            # customize the colors
+            paper_bgcolor='rgba(255,255,255)',
+            plot_bgcolor='rgba(255,255,255)'
+        )
+
+        # show the figure
+        fig.show()
+
+    # return based on parameters
+    if assignments:
+        return model, data_updated
+    else:
+        return model
