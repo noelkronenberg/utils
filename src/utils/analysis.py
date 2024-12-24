@@ -187,8 +187,7 @@ def lca(data: pd.DataFrame, outcome: str = None, confounders: list = None,
         assignments: bool = False, polar_plot: bool = False) -> StepMix:
     """
     Fits a Latent Class Analysis (LCA) model to the given data using `StepMix <https://stepmix.readthedocs.io/en/latest/api.html#stepmix>`_. 
-    If no outcome or confounders are provided, an unsupervised approach is used. If a fixed number of classes is specified,
-    the model will be fitted directly without hyperparameter tuning.
+    If no outcome or confounders are provided, an unsupervised approach is used.
 
     Args:
         data (pd.DataFrame): The input data containing the variables for LCA.
