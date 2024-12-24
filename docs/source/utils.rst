@@ -5,7 +5,7 @@
 utils package
 ===================
 
-.. automodule:: corr_utils
+.. automodule:: utils
    :members:
    :undoc-members:
    :show-inheritance:
