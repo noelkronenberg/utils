@@ -184,7 +184,7 @@ def logit(data: pd.DataFrame, outcome: str, confounders: list, categorical_vars:
 
 def lca(data: pd.DataFrame, outcome: str = None, confounders: list = None, 
         n_classes: list = list(range(1, 11)), fixed_n_classes: int = None, cv: int = 3, 
-        assignments: bool = False, polar_plot: bool = False) -> StepMix:
+        assignments: bool = False, polar_plot: bool = False, cmap: str = 'tab10') -> StepMix:
     """
     Fits a Latent Class Analysis (LCA) model to the given data using `StepMix <https://stepmix.readthedocs.io/en/latest/api.html#stepmix>`_. 
     If no outcome or confounders are provided, an unsupervised approach is used.
@@ -198,6 +198,7 @@ def lca(data: pd.DataFrame, outcome: str = None, confounders: list = None,
         cv (int, optional): The number of cross-validation folds for hyperparameter tuning. Defaults to 3.
         assignments (bool, optional): Whether to return the latent class assignments for the observations. Defaults to False.
         polar_plot (bool, optional): Whether to plot a polar plot of the latent class assignments. Defaults to False.
+        cmap (str, optional): The colormap to use for plotting clusters. Defaults to 'tab10'.
 
     Returns:
         StepMix: The fitted LCA model. If `assignments` is True, returns a tuple of (model, data_updated), where:
@@ -319,7 +320,9 @@ def lca(data: pd.DataFrame, outcome: str = None, confounders: list = None,
 
         # plot polar plot
         fig = go.Figure()
-        for latent_class in sorted(data_updated['latent_class'].unique()):
+        latent_classes = data_updated['latent_class'].unique()
+        colors = sns.color_palette(cmap, n_colors=len(latent_classes)).as_hex()
+        for i, latent_class in enumerate(sorted(latent_classes)):
 
             # filter data for the latent class
             class_data = normalized_prevalences[normalized_prevalences['latent_class'] == latent_class]
@@ -336,6 +339,8 @@ def lca(data: pd.DataFrame, outcome: str = None, confounders: list = None,
                 theta=confounders + [confounders[0]], # close the shape
                 name=f'Latent Class {latent_class}', # name for legend
                 fill='toself', # fill area inside the shape
+                fillcolor=f'rgba({int(int(colors[i][1:3], 16))}, {int(int(colors[i][3:5], 16))}, {int(int(colors[i][5:7], 16))}, 0.1)', # fill color (with transparency)
+                line=dict(color=colors[i]), # color for the line
             ))
             logger.info(f'Added polar plot for latent class {latent_class}.')
 
