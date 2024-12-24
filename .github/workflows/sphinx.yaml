@@ -6,7 +6,7 @@ permissions:
   contents: write
 
 jobs:
-  docs:
+  build:
     runs-on: ubuntu-latest
     steps:
     
@@ -30,6 +30,7 @@ jobs:
           make html
           
       - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
         if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
         with:
           publish_branch: gh-pages
