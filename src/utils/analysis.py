@@ -217,7 +217,6 @@ def lca(data: pd.DataFrame, outcome: str = None, confounders: list = None,
         ...     'var_6': np.random.randint(1, 5, 100)
         ... })
         >>> model = lca(data, n_classes=[2, 3, 4, 5])
-        >>> print(model)
     """
 
     # imply supervised approach if outcome or confounders are provided
