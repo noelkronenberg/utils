@@ -14,8 +14,7 @@ from . import logger
 def logit(data: pd.DataFrame, outcome: str, confounders: list, categorical_vars: list = None, 
           dropna: bool = False, show_results: bool = False, forest_plot: bool = False, 
           reference_col: str = None, selected_confounders: list = None, 
-          custom_colors: list = None, error_bar_colors: list = None,
-          confounder_names: dict = None) -> sm.Logit:
+          custom_colors: list = None, error_bar_colors: list = None) -> sm.Logit:
     """
     Fits a `statsmodels <https://www.statsmodels.org/stable/index.html>`_ logistic regression model to the given data and optionally plots a forest plot of the odds ratios.
 
@@ -31,7 +30,6 @@ def logit(data: pd.DataFrame, outcome: str, confounders: list, categorical_vars:
         selected_confounders (list, optional): A list of selected confounders to be included in the forest plot. Defaults to None.
         custom_colors (list, optional): A list of custom colors for the points in the forest plot. Defaults to None.
         error_bar_colors (list, optional): A list of custom colors for the error bars in the forest plot. Defaults to None.
-        confounder_names (dict, optional): A dictionary mapping original confounder names to display names in the forest plot. Defaults to None.
 
     Returns:
         sm.Logit: The fitted logistic regression model.
@@ -111,11 +109,6 @@ def logit(data: pd.DataFrame, outcome: str, confounders: list, categorical_vars:
     if selected_confounders:
         or_df = or_df[or_df['confounder'].isin(selected_confounders)]
         logger.info(f'Selected confounders for plotting: {selected_confounders}')
-
-    # map original confounder names to display names if confounder_names is provided
-    if confounder_names:
-        or_df['confounder'] = or_df['confounder'].map(confounder_names).fillna(or_df['confounder'])
-        logger.info(f'Mapped original confounder names to display names: {confounder_names}')
 
     # plotting
     if forest_plot:
