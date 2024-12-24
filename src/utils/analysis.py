@@ -210,12 +210,12 @@ def lca(data: pd.DataFrame, outcome: str = None, confounders: list = None,
         >>> import numpy as np
         >>> from utils.analysis import lca
         >>> data = pd.DataFrame({
-        ...     'var_1': np.random.randint(0, 2, 100),
-        ...     'var_2': np.random.randint(1, 10, 100),
-        ...     'var_3': np.random.randint(1, 5, 100),
-        ...     'var_4': np.random.randint(0, 2, 100),
-        ...     'var_5': np.random.randint(1, 10, 100),
-        ...     'var_6': np.random.randint(1, 5, 100)
+        ...     'var_1': np.random.randint(0, 1, 100),
+        ...     'var_2': np.random.randint(0, 1, 100),
+        ...     'var_3': np.random.randint(0, 1, 100),
+        ...     'var_4': np.random.randint(0, 1, 100),
+        ...     'var_5': np.random.randint(0, 1, 100),
+        ...     'var_6': np.random.randint(0, 1, 100)
         ... })
         >>> model = lca(data=data, n_classes=[2, 3, 4, 5])
     """
