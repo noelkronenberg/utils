@@ -209,17 +209,14 @@ def lca(data: pd.DataFrame, outcome: str = None, confounders: list = None,
 
     Examples:
         >>> import pandas as pd
-        >>> import numpy as np
+        >>> from sklearn.datasets import make_blobs
         >>> from utils.analysis import lca
-        >>> data = pd.DataFrame({
-        ...     'var_1': np.random.randint(0, 1, 100),
-        ...     'var_2': np.random.randint(0, 1, 100),
-        ...     'var_3': np.random.randint(0, 1, 100),
-        ...     'var_4': np.random.randint(0, 1, 100),
-        ...     'var_5': np.random.randint(0, 1, 100),
-        ...     'var_6': np.random.randint(0, 1, 100)
-        ... })
-        >>> model = lca(data=data, n_classes=[2, 3, 4, 5])
+        >>> # generate synthetic data with 3 actual latent classes
+        >>> X, _ = make_blobs(n_samples=1000, centers=3, n_features=6, random_state=42)
+        >>> synthetic_data = pd.DataFrame(X, columns=['var_1', 'var_2', 'var_3', 'var_4', 'var_5', 'var_6'])
+        >>> synthetic_data = (synthetic_data > synthetic_data.median()).astype(int)
+        >>> # fit LCA model
+        >>> model = lca(data=synthetic_data, n_classes=[2, 3, 4, 5], polar_plot=True)
     """
 
     # imply supervised approach if outcome or confounders are provided
