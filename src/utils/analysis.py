@@ -186,7 +186,7 @@ def lca(data: pd.DataFrame, outcome: str = None, confounders: list = None,
         cv (int, optional): The number of cross-validation folds for hyperparameter tuning. Defaults to 3.
 
     Returns:
-        model: The fitted LCA model.
+        StepMix: The fitted LCA model.
     """
 
     # imply supervised approach if outcome or confounders are provided
