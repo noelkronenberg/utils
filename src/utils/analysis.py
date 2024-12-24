@@ -16,7 +16,7 @@ def logit(data: pd.DataFrame, outcome: str, confounders: list, categorical_vars:
           custom_colors: list = None, error_bar_colors: list = None,
           confounder_names: dict = None) -> sm.Logit:
     """
-    Fits a logistic regression model to the given data and optionally plots a forest plot of the odds ratios.
+    Fits a `statsmodels <https://www.statsmodels.org/stable/index.html>`_ logistic regression model to the given data and optionally plots a forest plot of the odds ratios.
 
     Args:
         data (pd.DataFrame): The input data containing the outcome variable and confounders.
@@ -191,7 +191,7 @@ def logit(data: pd.DataFrame, outcome: str, confounders: list, categorical_vars:
 def lca(data: pd.DataFrame, outcome: str = None, confounders: list = None, 
         n_classes: list = list(range(1,11)), cv: int = 3) -> StepMix:
     """
-    Fits a Latent Class Analysis (LCA) model to the given data using StepMix. 
+    Fits a Latent Class Analysis (LCA) model to the given data using `StepMix <https://stepmix.readthedocs.io/en/latest/api.html#stepmix>`_. 
     If no outcome or confounders are provided, an unsupervised approach is used.
 
     Args:
