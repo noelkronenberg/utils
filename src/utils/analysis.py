@@ -190,16 +190,19 @@ def logit(data: pd.DataFrame, outcome: str, confounders: list, categorical_vars:
     return result
 
 def lca(data: pd.DataFrame, outcome: str = None, confounders: list = None, 
-        n_classes: list = list(range(1,11)), cv: int = 3, assignments: bool = False, polar_plot: bool = False) -> StepMix:
+        n_classes: list = list(range(1, 11)), fixed_n_classes: int = None, cv: int = 3, 
+        assignments: bool = False, polar_plot: bool = False) -> StepMix:
     """
     Fits a Latent Class Analysis (LCA) model to the given data using `StepMix <https://stepmix.readthedocs.io/en/latest/api.html#stepmix>`_. 
-    If no outcome or confounders are provided, an unsupervised approach is used.
+    If no outcome or confounders are provided, an unsupervised approach is used. If a fixed number of classes is specified,
+    the model will be fitted directly without hyperparameter tuning.
 
     Args:
         data (pd.DataFrame): The input data containing the variables for LCA.
         outcome (str, optional): The name of the outcome variable column. Defaults to None.
         confounders (list, optional): A list of confounders column names to be used in the model. Defaults to None.
         n_classes (list, optional): The number of latent classes to fit. Defaults to a range from 1 to 10.
+        fixed_n_classes (int, optional): A fixed number of latent classes to use instead of tuning. Defaults to None.
         cv (int, optional): The number of cross-validation folds for hyperparameter tuning. Defaults to 3.
         assignments (bool, optional): Whether to return the latent class assignments for the observations. Defaults to False.
         polar_plot (bool, optional): Whether to plot a polar plot of the latent class assignments. Defaults to False.
@@ -238,27 +241,34 @@ def lca(data: pd.DataFrame, outcome: str = None, confounders: list = None,
     # base model
     base_model = StepMix(n_components=3, n_steps=1, measurement='bernoulli', structural='bernoulli', random_state=42)
 
-    # hyperparameter tunings
-    gs = GridSearchCV(estimator=base_model, cv=cv, param_grid={'n_components': n_classes})
-    if supervised:
-        gs.fit(X, y)
+    # hyperparameter tuning or fixed model fitting
+    if fixed_n_classes is not None:
+        logger.info(f'Using fixed number of latent classes: {fixed_n_classes}.')
+        model = StepMix(n_components=fixed_n_classes, n_steps=1, measurement='bernoulli', structural='bernoulli', random_state=42)
+        if supervised:
+            model.fit(X, y)
+        else:
+            model.fit(data)
     else:
-        gs.fit(data)
-    logger.info(f'Hyperparameter tuning completed with {n_classes} latent classes and {cv} cross-validation folds.')
+        gs = GridSearchCV(estimator=base_model, cv=cv, param_grid={'n_components': n_classes})
+        if supervised:
+            gs.fit(X, y)
+        else:
+            gs.fit(data)
+        logger.info(f'Hyperparameter tuning completed with {n_classes} latent classes and {cv} cross-validation folds.')
+        model = gs.best_estimator_
+        logger.info(f'Best model selected based on hyperparameter tuning: {model}')
 
-    # plot log likelihood
-    results = pd.DataFrame(gs.cv_results_)
-    results['log_likelihood'] = results['mean_test_score']
-    sns.lineplot(data=results, x='param_n_components', y='log_likelihood', marker='o')
-    plt.xticks(results['param_n_components'].unique())
-    plt.xlabel('Number of Latent Classes')
-    plt.ylabel('Log Likelihood')
-    plt.show()
-    logger.info('Plotted log likelihood against number of latent classes.')
-
-    # best model
-    model = gs.best_estimator_
-    logger.info(f'Best model selected based on hyperparameter tuning: {model}')
+    # plot log likelihood (if not using fixed classes)
+    if fixed_n_classes is None:
+        results = pd.DataFrame(gs.cv_results_)
+        results['log_likelihood'] = results['mean_test_score']
+        sns.lineplot(data=results, x='param_n_components', y='log_likelihood', marker='o')
+        plt.xticks(results['param_n_components'].unique())
+        plt.xlabel('Number of Latent Classes')
+        plt.ylabel('Log Likelihood')
+        plt.show()
+        logger.info('Plotted log likelihood against number of latent classes.')
 
     # predict latent class assignments
     if assignments or polar_plot:
@@ -269,16 +279,17 @@ def lca(data: pd.DataFrame, outcome: str = None, confounders: list = None,
         # predict latent class assignments
         if supervised:
             predictions = model.predict(X, y)
-            logger.info(f'Predicted {len(predictions)} latent class assignments for supervised LCA model.')
         else:
             predictions = model.predict(data)
-            logger.info(f'Predicted {len(predictions)} latent class assignments for unsupervised LCA model.')
-
-        # merge with original data (incremented by 1 to start from 1)
+        logger.info(f'Predicted {len(predictions)} latent class assignments.')
+        
+        # add latent class assignments (starting from 1)
         data_updated['latent_class'] = predictions + 1
         logger.info('Merged latent class assignments with observations.')
-    
+
+    # plot polar plot
     if polar_plot:
+
         # use all columns as confounders if not provided
         if not supervised:
             confounders = data.columns.tolist()
@@ -303,6 +314,7 @@ def lca(data: pd.DataFrame, outcome: str = None, confounders: list = None,
             max_value = normalized_prevalences[confounder].max()
             max_classes = normalized_prevalences[normalized_prevalences[confounder] == max_value]['latent_class'].values
             
+            # assign class with highest value
             if max_classes.size == 0:
                 logger.warning(f'Confounder {confounder} has no classes assigned.')
                 assigned_classes[confounder] = None
@@ -319,15 +331,14 @@ def lca(data: pd.DataFrame, outcome: str = None, confounders: list = None,
 
             # filter data for the latent class
             class_data = normalized_prevalences[normalized_prevalences['latent_class'] == latent_class]
-            
-            # ensure class_data is not empty
+            class_values = class_data[confounders].values.flatten()
+
+            # skip if no data available
             if class_data.empty:
                 logger.warning(f'No data available for latent class {latent_class}. Skipping.')
                 continue
             
-            class_values = class_data[confounders].values.flatten()
-            
-            # add data to graph
+            # plot polar plot
             fig.add_trace(go.Scatterpolar(
                 r=class_values.tolist() + [class_values[0]], # close the shape
                 theta=confounders + [confounders[0]], # close the shape
@@ -336,36 +347,18 @@ def lca(data: pd.DataFrame, outcome: str = None, confounders: list = None,
             ))
             logger.info(f'Added polar plot for latent class {latent_class}.')
 
-        # update layout
+        # update layout and show figure
         fig.update_layout(
             polar=dict(
-                # customize the radial axis 
-                radialaxis=dict( 
-                    visible=True,
-                    showline=True, 
-                    linecolor='rgba(0,0,0,0.1)',
-                    gridcolor='rgba(0,0,0,0.1)',
-                ),
-                # customize the angular axis
-                angularaxis=dict(
-                    tickfont=dict(size=24),
-                    linecolor='grey',
-                    gridcolor='rgba(0,0,0,0.1)'
-                ),
-                # customize the background
+                radialaxis=dict(visible=True, showline=True, linecolor='rgba(0,0,0,0.1)', gridcolor='rgba(0,0,0,0.1)'),
+                angularaxis=dict(tickfont=dict(size=24), linecolor='grey', gridcolor='rgba(0,0,0,0.1)'),
                 bgcolor='white'
             ),
-            # customize the legend
             showlegend=True,
-            legend=dict(
-                font=dict(size=24),
-            ),
-            # customize the colors
+            legend=dict(font=dict(size=24)),
             paper_bgcolor='rgba(255,255,255)',
             plot_bgcolor='rgba(255,255,255)'
         )
-
-        # show the figure
         fig.show()
 
     # return based on parameters
