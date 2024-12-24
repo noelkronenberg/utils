@@ -231,6 +231,11 @@ def lca(data: pd.DataFrame, outcome: str = None, confounders: list = None,
     else:
         logger.info('No outcome or confounders provided. Using unsupervised approach.')
 
+    # ensure columns are binary, warn user if not
+    for col in data.columns:
+        if data[col].nunique() > 2:
+            logger.warning(f'Column {col} is non-binary. LCA results might not be accurate.')
+
     # base model
     base_model = StepMix(n_components=3, n_steps=1, measurement='bernoulli', structural='bernoulli', random_state=42)
 
