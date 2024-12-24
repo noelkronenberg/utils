@@ -231,10 +231,10 @@ def lca(data: pd.DataFrame, outcome: str = None, confounders: list = None,
         logger.info('No outcome or confounders provided. Using unsupervised approach.')
 
     # base model
-    model = StepMix(n_components=3, n_steps=1, measurement='bernoulli', structural='bernoulli', random_state=42)
+    base_model = StepMix(n_components=3, n_steps=1, measurement='bernoulli', structural='bernoulli', random_state=42)
 
     # hyperparameter tunings
-    gs = GridSearchCV(estimator=model, cv=cv, param_grid={'n_components': n_classes})
+    gs = GridSearchCV(estimator=base_model, cv=cv, param_grid={'n_components': n_classes})
     if supervised:
         gs.fit(X, y)
     else:
