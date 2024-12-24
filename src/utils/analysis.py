@@ -146,7 +146,7 @@ def logit(data: pd.DataFrame, outcome: str, confounders: list, categorical_vars:
             palette = ['blue'] * len(or_df)
             logger.info('Using default blue color for the points.')
 
-        # create a scatter plot with custom colors
+        # create a scatter plot
         sns.scatterplot(data=or_df, x='OR', y='confounder', 
                          color='blue', s=100, zorder=2) # default color for the points
         logger.info('Created scatter plot with default colors.')
