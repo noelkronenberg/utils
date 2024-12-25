@@ -11,3 +11,7 @@ pip install git+https://github.com/noelkronenberg/utils.git
 ## Documentation
 
 [noelkronenberg.github.io/utils/](https://noelkronenberg.github.io/utils/)
+
+## Contribution
+
+Please submit bug reports or suggestions as [issues](https://github.com/noelkronenberg/utils/issues). Code changes should be proposed by means of [pull requests](https://github.com/noelkronenberg/utils/pulls).
