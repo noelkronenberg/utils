@@ -370,6 +370,8 @@ def lca(data: pd.DataFrame, outcome: str = None, confounders: list = None,
             ),
             showlegend=True,
             legend=dict(font=dict(size=24)),
+            width=2400,
+            height=1200,
             paper_bgcolor='rgba(255,255,255)',
             plot_bgcolor='rgba(255,255,255)'
         )
