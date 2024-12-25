@@ -325,6 +325,16 @@ def lca(data: pd.DataFrame, outcome: str = None, confounders: list = None,
                 assigned_classes[confounder] = max_class
                 logger.info(f'Assigned latent class {max_class} to confounder {confounder} with normalized prevalence {max_value:.4f}.')
 
+        # sort confounders based on assigned classes
+        sorted_confounders = []
+        for confounder, assigned_class in assigned_classes.items():
+            sorted_confounders.append((confounder, assigned_class))
+        # sort by assigned class
+        sorted_confounders.sort(key=lambda x: x[1]) 
+        # get confounder names
+        sorted_confounder_names = [confounder for confounder, _ in sorted_confounders]
+        logger.info(f'Sorted confounders based on assigned latent classes: {sorted_confounder_names}')
+
         # plot polar plot
         fig = go.Figure()
         latent_classes = data_updated['latent_class'].unique()
@@ -333,7 +343,7 @@ def lca(data: pd.DataFrame, outcome: str = None, confounders: list = None,
 
             # filter data for the latent class
             class_data = normalized_prevalences[normalized_prevalences['latent_class'] == latent_class]
-            class_values = class_data[confounders].values.flatten()
+            class_values = class_data[sorted_confounder_names].values.flatten()
 
             # skip if no data available
             if class_data.empty:
@@ -343,7 +353,7 @@ def lca(data: pd.DataFrame, outcome: str = None, confounders: list = None,
             # plot polar plot
             fig.add_trace(go.Scatterpolar(
                 r=class_values.tolist() + [class_values[0]], # close the shape
-                theta=confounders + [confounders[0]], # close the shape
+                theta=sorted_confounder_names + [sorted_confounder_names[0]], # close the shape
                 name=f'Latent Class {latent_class}', # name for legend
                 fill='toself', # fill area inside the shape
                 fillcolor=f'rgba({int(int(colors[i][1:3], 16))}, {int(int(colors[i][3:5], 16))}, {int(int(colors[i][5:7], 16))}, 0.1)', # fill color (with transparency)
