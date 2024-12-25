@@ -8,6 +8,6 @@ CORR-Utils is a Python package for working with data from the Charité Outcomes 
 pip install git+https://github.com/noelkronenberg/utils.git
 ```
 
-## Usage
+## Documentation
 
-Please refer to the documentation: [noelkronenberg.github.io/utils/](https://noelkronenberg.github.io/utils/)
+[noelkronenberg.github.io/utils/](https://noelkronenberg.github.io/utils/)
