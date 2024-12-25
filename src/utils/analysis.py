@@ -325,15 +325,17 @@ def lca(data: pd.DataFrame, outcome: str = None, confounders: list = None,
                 assigned_classes[confounder] = max_class
                 logger.info(f'Assigned latent class {max_class} to confounder {confounder} with normalized prevalence {max_value:.4f}.')
 
-        # sort confounders based on assigned classes
+        # sort confounders based on assigned classes and prevalence value within each class
         sorted_confounders = []
         for confounder, assigned_class in assigned_classes.items():
-            sorted_confounders.append((confounder, assigned_class))
-        # sort by assigned class
-        sorted_confounders.sort(key=lambda x: x[1]) 
-        # get confounder names
-        sorted_confounder_names = [confounder for confounder, _ in sorted_confounders]
-        logger.info(f'Sorted confounders based on assigned latent classes: {sorted_confounder_names}')
+            # get the prevalence value for the assigned class
+            prevalence_value = normalized_prevalences.loc[normalized_prevalences['latent_class'] == assigned_class, confounder].values[0]
+            sorted_confounders.append((confounder, assigned_class, prevalence_value))
+        # sort by assigned class and then by prevalence value
+        sorted_confounders.sort(key=lambda x: (x[1], -x[2])) 
+        # get (only) the sorted confounder names
+        sorted_confounder_names = [confounder for confounder, _, _ in sorted_confounders]
+        logger.info(f'Sorted confounders based on assigned latent classes and prevalence values: {sorted_confounder_names}')
 
         # plot polar plot
         fig = go.Figure()
