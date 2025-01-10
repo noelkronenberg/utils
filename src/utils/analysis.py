@@ -194,7 +194,7 @@ def logit(data: pd.DataFrame, outcome: str, confounders: list, categorical_vars:
 
 def lca(data: pd.DataFrame, outcome: str = None, confounders: list = None, 
         n_classes: list = list(range(1, 11)), fixed_n_classes: int = None, show_metrics: bool = False, cv: int = 3, 
-        assignments: bool = False, polar_plot: bool = False, cmap: str = 'tab10') -> StepMix:
+        return_assignments: bool = False, polar_plot: bool = False, cmap: str = 'tab10') -> StepMix:
     """
     Fits a Latent Class Analysis (LCA) model to the given data using `StepMix <https://stepmix.readthedocs.io/en/latest/api.html#stepmix>`_. 
     If no outcome or confounders are provided, an unsupervised approach is used.
@@ -208,14 +208,14 @@ def lca(data: pd.DataFrame, outcome: str = None, confounders: list = None,
         fixed_n_classes (int, optional): A fixed number of latent classes to use instead of tuning. Defaults to None.
         show_metrics(bool, optional): Whether to plot LCA metrics. Only applies when `fixed_n_classes` is None. Defaults to False.
         cv (int, optional): The number of cross-validation folds for hyperparameter tuning. Defaults to 3.
-        assignments (bool, optional): Whether to return the latent class assignments for the observations. Defaults to False.
+        return_assignments (bool, optional): Whether to return the latent class assignments for the observations. Defaults to False.
         polar_plot (bool, optional): Whether to plot a polar plot of the latent class assignments. Defaults to False.
         cmap (str, optional): The colormap to use for plotting clusters. Defaults to 'tab10'.
 
     Returns:
         StepMix or tuple: 
-            If `assignments` is False (default), returns the fitted LCA model (with the highest log likelihood when `n_classes` is used) as a `StepMix` object.
-            If `assignments` is True, returns a tuple containing:
+            If `return_assignments` is False (default), returns the fitted LCA model (with the highest log likelihood when `n_classes` is used) as a `StepMix` object.
+            If `return_assignments` is True, returns a tuple containing:
                 - StepMix: The fitted LCA model (with the highest log likelihood when `n_classes` is used).
                 - pd.DataFrame: The original data with an additional column named 'latent_class' that contains the predicted latent class assignments for each observation.
 
@@ -358,7 +358,7 @@ def lca(data: pd.DataFrame, outcome: str = None, confounders: list = None,
         logger.info(f'Best model selected based on hyperparameter tuning: {model}')
 
     # predict latent class assignments
-    if assignments or polar_plot:
+    if return_assignments or polar_plot:
 
         # copy data to avoid modifying the original
         data_updated = data.copy()
@@ -467,7 +467,7 @@ def lca(data: pd.DataFrame, outcome: str = None, confounders: list = None,
         fig.show()
 
     # return based on parameters
-    if assignments:
+    if return_assignments:
         return model, data_updated
     else:
         return model
