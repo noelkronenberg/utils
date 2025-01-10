@@ -2,6 +2,8 @@
 
 CORR-Utils is a Python package for working with data from the Charité Outcomes Research Repository (CORR). It aims to provide utilities for the most important data science tasks with publication-ready results.
 
+[![Unit Tests](https://github.com/noelkronenberg/utils/actions/workflows/tests.yaml/badge.svg)](https://github.com/noelkronenberg/utils/actions/workflows/tests.yaml)
+
 ## Installation
 
 ```
