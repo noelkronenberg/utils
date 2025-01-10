@@ -214,9 +214,9 @@ def lca(data: pd.DataFrame, outcome: str = None, confounders: list = None,
 
     Returns:
         StepMix or tuple: 
-            If `assignments` is False (default), returns the fitted LCA model as a `StepMix` object.
+            If `assignments` is False (default), returns the fitted LCA model (with the highest log likelihood when `n_classes` is used) as a `StepMix` object.
             If `assignments` is True, returns a tuple containing:
-                - model (StepMix): The fitted LCA model.
+                - model (StepMix): The fitted LCA model (with the highest log likelihood when `n_classes` is used).
                 - data_updated (pd.DataFrame): The original data with an additional column named 'latent_class' that contains the predicted latent class assignments for each observation.
 
     Examples:
