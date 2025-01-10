@@ -296,11 +296,16 @@ def lca(data: pd.DataFrame, outcome: str = None, confounders: list = None,
                 else:
                     model.fit(data)
                 logger.info(f'Fitted model with {params["n_components"]} latent classes.')
-               
-                # get BIC, Entropy, and smallest class size
-                bic = model.bic(data)
-                entropy = model.entropy(data)
-                smallest_class_size = min(np.bincount(model.predict(data)))
+
+                 # get BIC, Entropy, and smallest class size
+                if supervised:
+                    bic = model.bic(X, y)
+                    entropy = model.entropy(X, y)
+                    smallest_class_size = min(np.bincount(model.predict(X, y)))
+                else:
+                    bic = model.bic(data)
+                    entropy = model.entropy(data)
+                    smallest_class_size = min(np.bincount(model.predict(data)))
                 logger.info(f'Calculated additional metrics for model with {params["n_components"]} latent classes.')
                 
                 # append metrics to lists
