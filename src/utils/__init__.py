@@ -1,12 +1,12 @@
 import logging
 import warnings
 
-def logging_setup(log_file: str = 'logs.log', logger_name: str = 'Utils') -> None:
+def logging_setup(log_file: str = 'utils.log', logger_name: str = 'Utils') -> None:
     """
     Setup logging with a file handler.
 
     Args:
-        log_file (str): The path to the log file. Defaults to 'logs.log'.
+        log_file (str): The path to the log file. Defaults to 'utils.log'.
         logger_name (str): The name of the logger. Defaults to 'Utils'.
 
     Returns:
