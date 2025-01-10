@@ -9,6 +9,9 @@ import statsmodels.api as sm
 from stepmix import StepMix
 from sklearn.model_selection import GridSearchCV
 
+import warnings
+from sklearn.exceptions import ConvergenceWarning
+
 from . import logger
 
 def logit(data: pd.DataFrame, outcome: str, confounders: list, categorical_vars: list = None, 
@@ -190,7 +193,7 @@ def logit(data: pd.DataFrame, outcome: str, confounders: list, categorical_vars:
     return result
 
 def lca(data: pd.DataFrame, outcome: str = None, confounders: list = None, 
-        n_classes: list = list(range(1, 11)), fixed_n_classes: int = None, cv: int = 3, 
+        n_classes: list = list(range(1, 11)), fixed_n_classes: int = None, show_metrics: bool = False, cv: int = 3, 
         assignments: bool = False, polar_plot: bool = False, cmap: str = 'tab10') -> StepMix:
     """
     Fits a Latent Class Analysis (LCA) model to the given data using `StepMix <https://stepmix.readthedocs.io/en/latest/api.html#stepmix>`_. 
@@ -203,15 +206,18 @@ def lca(data: pd.DataFrame, outcome: str = None, confounders: list = None,
         confounders (list, optional): A list of confounders column names to be used in the model. Defaults to None.
         n_classes (list, optional): The number of latent classes to fit. Defaults to a range from 1 to 10.
         fixed_n_classes (int, optional): A fixed number of latent classes to use instead of tuning. Defaults to None.
+        show_metrics(bool, optional): Whether to plot LCA metrics. Only applies when `fixed_n_classes` is None. Defaults to False.
         cv (int, optional): The number of cross-validation folds for hyperparameter tuning. Defaults to 3.
         assignments (bool, optional): Whether to return the latent class assignments for the observations. Defaults to False.
         polar_plot (bool, optional): Whether to plot a polar plot of the latent class assignments. Defaults to False.
         cmap (str, optional): The colormap to use for plotting clusters. Defaults to 'tab10'.
 
     Returns:
-        StepMix: The fitted LCA model. If `assignments` is True, returns a tuple of (model, data_updated), where:
-            - model (StepMix): The fitted LCA model.
-            - data_updated (pd.DataFrame): The original data with an additional column for latent class assignments.
+        StepMix or tuple: 
+            If `assignments` is False (default), returns the fitted LCA model as a `StepMix` object.
+            If `assignments` is True, returns a tuple containing:
+                - model (StepMix): The fitted LCA model.
+                - data_updated (pd.DataFrame): The original data with an additional column named 'latent_class' that contains the predicted latent class assignments for each observation.
 
     Examples:
         >>> import pandas as pd
@@ -255,26 +261,96 @@ def lca(data: pd.DataFrame, outcome: str = None, confounders: list = None,
             model.fit(X, y)
         else:
             model.fit(data)
+        logger.info(f'Fitted model with {fixed_n_classes} latent classes.')
     else:
-        gs = GridSearchCV(estimator=base_model, cv=cv, param_grid={'n_components': n_classes})
+        # model selection using hyperparameter tuning
+        logger.info(f'Using hyperparameter tuning with {cv} cross-validation folds.')
+        gs = GridSearchCV(estimator=base_model, cv=cv, param_grid={'n_components': n_classes}, verbose=0)
+
+        # suppress ConvergenceWarning (as it is expected in LCA with CV)
+        warnings.filterwarnings("ignore", category=ConvergenceWarning)
+
+        # fit model
         if supervised:
             gs.fit(X, y)
         else:
             gs.fit(data)
         logger.info(f'Hyperparameter tuning completed with {n_classes} latent classes and {cv} cross-validation folds.')
+        
+        if show_metrics:
+            # calculate additional metrics
+            results = pd.DataFrame(gs.cv_results_)
+            results['log_likelihood'] = results['mean_test_score']
+            bic_values = []
+            entropy_values = []
+            smallest_class_sizes = []
+
+            # create a new model for each set of parameters
+            for params in gs.cv_results_['params']:
+                logger.info(f'Calculating additional metrics for model with {params["n_components"]} latent classes.')
+                model = StepMix(n_components=params['n_components'], n_steps=1, measurement='bernoulli', structural='bernoulli', random_state=42)
+
+                # fit the model to the data
+                if supervised:
+                    model.fit(X, y)
+                else:
+                    model.fit(data)
+                logger.info(f'Fitted model with {params["n_components"]} latent classes.')
+               
+                # get BIC, Entropy, and smallest class size
+                bic = model.bic(data)
+                entropy = model.entropy(data)
+                smallest_class_size = min(np.bincount(model.predict(data)))
+                logger.info(f'Calculated additional metrics for model with {params["n_components"]} latent classes.')
+                
+                # append metrics to lists
+                bic_values.append(bic)
+                entropy_values.append(entropy)
+                smallest_class_sizes.append(smallest_class_size)
+
+            # add metrics to results
+            results['BIC'] = bic_values
+            results['Entropy'] = entropy_values
+            results['Smallest Class Size'] = smallest_class_sizes
+
+            # plot additional metrics
+
+            plt.figure(figsize=(10, 5))
+            sns.lineplot(data=results, x='param_n_components', y='log_likelihood', marker='o')
+            plt.title('Log Likelihood')
+            plt.xlabel('Number of Latent Classes')
+            plt.ylabel('Log Likelihood')
+            plt.tight_layout()
+            plt.show()
+
+            plt.figure(figsize=(10, 5))
+            sns.lineplot(data=results, x='param_n_components', y='BIC', marker='o')
+            plt.title('BIC')
+            plt.xlabel('Number of Latent Classes')
+            plt.ylabel('BIC')
+            plt.tight_layout()
+            plt.show()
+
+            plt.figure(figsize=(10, 5))
+            sns.lineplot(data=results, x='param_n_components', y='Entropy', marker='o')
+            plt.title('Entropy')
+            plt.xlabel('Number of Latent Classes')
+            plt.ylabel('Entropy')
+            plt.tight_layout()
+            plt.show()
+
+            plt.figure(figsize=(10, 5))
+            sns.lineplot(data=results, x='param_n_components', y='Smallest Class Size', marker='o')
+            plt.title('Smallest Class Size')
+            plt.xlabel('Number of Latent Classes')
+            plt.ylabel('Smallest Class Size')
+            plt.tight_layout()
+            plt.show()
+
+            logger.info('Plotted log likelihood, BIC, Entropy, and smallest class size against number of latent classes.')
+
         model = gs.best_estimator_
         logger.info(f'Best model selected based on hyperparameter tuning: {model}')
-
-    # plot log likelihood (if not using fixed classes)
-    if fixed_n_classes is None:
-        results = pd.DataFrame(gs.cv_results_)
-        results['log_likelihood'] = results['mean_test_score']
-        sns.lineplot(data=results, x='param_n_components', y='log_likelihood', marker='o')
-        plt.xticks(results['param_n_components'].unique())
-        plt.xlabel('Number of Latent Classes')
-        plt.ylabel('Log Likelihood')
-        plt.show()
-        logger.info('Plotted log likelihood against number of latent classes.')
 
     # predict latent class assignments
     if assignments or polar_plot:
