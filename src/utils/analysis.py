@@ -297,14 +297,14 @@ def lca(data: pd.DataFrame, outcome: str = None, confounders: list = None,
                     model.fit(data)
                 logger.info(f'Fitted model with {params["n_components"]} latent classes.')
 
-                 # get BIC, Entropy, and smallest class size
+                # get BIC, relative Entropy, and smallest class size
                 if supervised:
                     bic = model.bic(X, y)
-                    entropy = model.entropy(X, y)
+                    entropy = model.relative_entropy(X, y)
                     smallest_class_size = min(np.bincount(model.predict(X, y)))
                 else:
                     bic = model.bic(data)
-                    entropy = model.entropy(data)
+                    entropy = model.relative_entropy(data)
                     smallest_class_size = min(np.bincount(model.predict(data)))
                 logger.info(f'Calculated additional metrics for model with {params["n_components"]} latent classes.')
                 
@@ -340,7 +340,7 @@ def lca(data: pd.DataFrame, outcome: str = None, confounders: list = None,
             sns.lineplot(data=results, x='param_n_components', y='Entropy', marker='o')
             plt.title('Entropy')
             plt.xlabel('Number of Latent Classes')
-            plt.ylabel('Entropy')
+            plt.ylabel('Relative Entropy')
             plt.tight_layout()
             plt.show()
 
