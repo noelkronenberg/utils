@@ -15,7 +15,7 @@ from sklearn.exceptions import ConvergenceWarning
 from . import logger
 
 def logit(data: pd.DataFrame, outcome: str, confounders: list, categorical_vars: list = None, 
-          dropna: bool = False, show_results: bool = False, forest_plot: bool = False, 
+          dropna: bool = False, show_results: bool = False, show_forest_plot: bool = False, 
           reference_col: str = None, selected_confounders: list = None, confounder_names: dict = None,
           custom_colors: list = None, error_bar_colors: list = None) -> sm.Logit:
     """
@@ -29,7 +29,7 @@ def logit(data: pd.DataFrame, outcome: str, confounders: list, categorical_vars:
         dropna (bool, optional): Whether to drop rows with missing values. Defaults to False.
         categorical_vars (list, optional): A list of categorical variable column names to be converted to dummy variables. Defaults to None.
         show_results (bool, optional): Whether to print the summary of the logistic regression results. Defaults to False.
-        forest_plot (bool, optional): Whether to plot a forest plot of the odds ratios. Defaults to False.
+        show_forest_plot (bool, optional): Whether to plot a forest plot of the odds ratios. Defaults to False.
         reference_col (str, optional): The reference column for adjusting odds ratios. Defaults to None.
         selected_confounders (list, optional): A list of selected confounders to be included in the forest plot. Defaults to None.
         confounder_names (dict, optional): A dictionary mapping original confounder names to display names in the forest plot. Defaults to None.
@@ -51,7 +51,7 @@ def logit(data: pd.DataFrame, outcome: str, confounders: list, categorical_vars:
         ...     data=data, 
         ...     outcome='outcome', 
         ...     confounders=['confounder_1', 'confounder_2'], 
-        ...     forest_plot=True, 
+        ...     show_forest_plot=True, 
         ...     reference_col='confounder_1'
         ... )
     """
@@ -121,7 +121,7 @@ def logit(data: pd.DataFrame, outcome: str, confounders: list, categorical_vars:
         logger.info(f'Mapped original confounder names to display names: {confounder_names}')
 
     # plotting
-    if forest_plot:
+    if show_forest_plot:
         plt.figure(figsize=(10, 6))
         
         # set white background
@@ -194,7 +194,7 @@ def logit(data: pd.DataFrame, outcome: str, confounders: list, categorical_vars:
 
 def lca(data: pd.DataFrame, outcome: str = None, confounders: list = None, 
         n_classes: list = list(range(1, 11)), fixed_n_classes: int = None, show_metrics: bool = False, cv: int = 3, 
-        return_assignments: bool = False, polar_plot: bool = False, cmap: str = 'tab10') -> StepMix:
+        return_assignments: bool = False, show_polar_plot: bool = False, cmap: str = 'tab10') -> StepMix:
     """
     Fits a Latent Class Analysis (LCA) model to the given data using `StepMix <https://stepmix.readthedocs.io/en/latest/api.html#stepmix>`_. 
     If no outcome or confounders are provided, an unsupervised approach is used.
@@ -209,7 +209,7 @@ def lca(data: pd.DataFrame, outcome: str = None, confounders: list = None,
         show_metrics(bool, optional): Whether to plot LCA metrics. Only applies when `fixed_n_classes` is None. Defaults to False.
         cv (int, optional): The number of cross-validation folds for hyperparameter tuning. Defaults to 3.
         return_assignments (bool, optional): Whether to return the latent class assignments for the observations. Defaults to False.
-        polar_plot (bool, optional): Whether to plot a polar plot of the latent class assignments. Defaults to False.
+        show_polar_plot (bool, optional): Whether to plot a polar plot of the latent class assignments. Defaults to False.
         cmap (str, optional): The colormap to use for plotting clusters. Defaults to 'tab10'.
 
     Returns:
@@ -231,7 +231,7 @@ def lca(data: pd.DataFrame, outcome: str = None, confounders: list = None,
         ... )
         >>> synthetic_data = (synthetic_data > synthetic_data.median()).astype(int)
         >>> # fit LCA model
-        >>> model = lca(data=synthetic_data, n_classes=[2, 3, 4, 5], polar_plot=True)
+        >>> model = lca(data=synthetic_data, n_classes=[2, 3, 4, 5], show_polar_plot=True)
     """
 
     # imply supervised approach if outcome or confounders are provided
@@ -358,7 +358,7 @@ def lca(data: pd.DataFrame, outcome: str = None, confounders: list = None,
         logger.info(f'Best model selected based on hyperparameter tuning: {model}')
 
     # predict latent class assignments
-    if return_assignments or polar_plot:
+    if return_assignments or show_polar_plot:
 
         # copy data to avoid modifying the original
         data_updated = data.copy()
@@ -375,7 +375,7 @@ def lca(data: pd.DataFrame, outcome: str = None, confounders: list = None,
         logger.info('Merged latent class assignments with observations.')
 
     # plot polar plot
-    if polar_plot:
+    if show_polar_plot:
 
         # use all columns as confounders if not provided
         if not supervised:
