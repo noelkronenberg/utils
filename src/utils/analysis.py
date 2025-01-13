@@ -8,6 +8,7 @@ import plotly.graph_objects as go
 import statsmodels.api as sm
 from stepmix import StepMix
 from sklearn.model_selection import GridSearchCV
+from matplotlib.ticker import LogLocator
 
 import warnings
 from sklearn.exceptions import ConvergenceWarning
@@ -123,6 +124,10 @@ def logit(data: pd.DataFrame, outcome: str, confounders: list, categorical_vars:
     # plotting
     if show_forest_plot:
         plt.figure(figsize=(10, 6))
+
+        # set x-axis to log scale
+        plt.xscale('log')
+        logger.info('Set x-axis to log scale.')
         
         # set white background
         plt.gca().set_facecolor('white')
@@ -169,19 +174,34 @@ def logit(data: pd.DataFrame, outcome: str, confounders: list, categorical_vars:
         plt.ylabel('Confounders')
         plt.grid(False)
 
-        # adjust x-axis ticks
-        current_ticks = plt.xticks()[0]
-        new_ticks = [tick for tick in current_ticks if tick != 0]
-        plt.xticks(new_ticks +  [1]) # include 1 in the x-axis ticks
+        # get min and max values for x-axis
+        min_x = min(or_df["Lower CI"].min(), or_df["OR"].min())
+        max_x = max(or_df["Upper CI"].max(), or_df["OR"].max())
+        if not np.isfinite(min_x):
+            min_x = or_df["OR"].min()
+        if not np.isfinite(max_x):
+            max_x = or_df["OR"].max()
 
-        # set y-axis limits
-        min_x = min(or_df["Lower CI"].min(), or_df["OR"].min()) - 3
-        max_x = max(or_df["Upper CI"].max(), or_df["OR"].max()) + 3
-        if np.isfinite(min_x) and np.isfinite(max_x):
-            plt.xlim(left=min_x, right=max_x)
-            logger.info(f'Set x-axis limits: left = {min_x} and right = {max_x}')
-        else:
-            logger.warning('Could not set x-axis limits as minimum or maximum value is not finite. Using default limits.')
+        # buffer size for x-axis limits
+        buffer_size = 0.1 
+        # actual buffer size to apply in log space
+        left_buffer = buffer_size
+        right_buffer = buffer_size
+        # left and right buffers in log scale
+        log_min_x = np.log10(min_x) if min_x > 0 else 0
+        log_max_x = np.log10(max_x) if max_x > 0 else 0
+
+        # set x-axis limits with the buffer applied in log scale
+        plt.xlim(left=10**(log_min_x - left_buffer), right=10**(log_max_x + right_buffer)) 
+        logger.info(f'Set x-axis limits: left = {10**(log_min_x - left_buffer)} and right = {10**(log_max_x + right_buffer)}')
+
+        # custom log x-axis ticks
+        plt.gca().xaxis.set_major_locator(LogLocator(base=10.0, numticks=10))
+        plt.gca().xaxis.set_minor_locator(LogLocator(base=10.0, subs='auto', numticks=10))
+        tick_values = np.logspace(log_min_x - left_buffer, log_max_x + right_buffer, num=10)
+        # tick_values = np.array([round(v * 2) / 2 if v > 1 else v for v in tick_values]) # round ticks > 1 to .5
+        plt.xticks(tick_values, [f'{v:.1f}' for v in tick_values])
+        logger.info(f'Set custom log x-axis ticks: {tick_values}')
 
         plt.show()
 
