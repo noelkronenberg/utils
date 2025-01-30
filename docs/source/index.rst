@@ -25,6 +25,5 @@ Structure
 GitHub Repository
 -----------------
 
-You can find the source code on GitHub: `https://github.com/noelkronenberg/utils <https://github.com/noelkronenberg/utils>`_. 
-
+You can find the source code on `GitHub <https://github.com/noelkronenberg/utils>`_. 
 Please submit bug reports or suggestions as `issues <https://github.com/noelkronenberg/utils/issues>`_. Code changes should be proposed by means of `pull requests <https://github.com/noelkronenberg/utils/pulls>`_.
