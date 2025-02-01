@@ -15,10 +15,10 @@ from sklearn.exceptions import ConvergenceWarning
 
 from . import logger
 
-def logit(data: pd.DataFrame, outcome: str, confounders: list, categorical_vars: list = None, 
-          dropna: bool = False, show_results: bool = False, show_forest_plot: bool = False, 
-          reference_col: str = None, selected_confounders: list = None, confounder_names: dict = None,
-          custom_colors: list = None, error_bar_colors: list = None) -> sm.Logit:
+def logit(data: pd.DataFrame, outcome: str, confounders: list, categorical_vars: list = None, drop_first: bool = True,
+          dropna: bool = False, show_results: bool = False, show_forest_plot: bool = False, reference_col: str = None, 
+          selected_confounders: list = None, confounder_names: dict = None, custom_colors: list = None, 
+          error_bar_colors: list = None) -> sm.Logit:
     """
     Fits a `statsmodels <https://www.statsmodels.org/stable/index.html>`_ logistic regression model to the given data. 
     Optionally plots a forest plot of the odds ratios.
@@ -29,6 +29,7 @@ def logit(data: pd.DataFrame, outcome: str, confounders: list, categorical_vars:
         confounders (list): A list of confounders column names to be used in the model.
         dropna (bool, optional): Whether to drop rows with missing values. Defaults to False.
         categorical_vars (list, optional): A list of categorical variable column names to be converted to dummy variables. Defaults to None.
+        drop_first (bool, optional): Whether to drop the first dummy variable for each categorical variable. Defaults to True.
         show_results (bool, optional): Whether to print the summary of the logistic regression results. Defaults to False.
         show_forest_plot (bool, optional): Whether to plot a forest plot of the odds ratios. Defaults to False.
         reference_col (str, optional): The reference column for adjusting odds ratios. Defaults to None.
@@ -72,11 +73,17 @@ def logit(data: pd.DataFrame, outcome: str, confounders: list, categorical_vars:
         logger.info(f'Dropped {removed_entries} rows with missing values.')
         logger.info(f'Columns with most missing values: {missing_data[missing_data > 0].sort_values(ascending=False).head().to_dict()}')
 
-    # convert categorical variables to dummy variables
     if categorical_vars:
-        X = pd.get_dummies(X, columns=categorical_vars, drop_first=False)
-        logger.info(f'Converted categorical variables to dummy variables: {categorical_vars}')
+        for col in categorical_vars:
+            # verify that the columns in categorical_vars are of a categorical data type
+            if not pd.api.types.is_categorical_dtype(data[col]):
+                data[col] = data[col].astype('category')
+                logger.info(f'Converted column {col} to categorical data type.')
 
+        # convert categorical variables to dummy variables
+        X = pd.get_dummies(X, columns=categorical_vars, drop_first=drop_first)
+        logger.info(f'Converted categorical variables to dummy variables: {categorical_vars} (drop_first={drop_first})')
+    
     # ensure binary variables are integers (0 or 1) instead of boolean
     for col in X.select_dtypes(include=['bool']).columns:
         X[col] = X[col].astype(int)
