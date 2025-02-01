@@ -29,7 +29,7 @@ def logit(data: pd.DataFrame, outcome: str, confounders: list, categorical_vars:
         confounders (list): A list of confounders column names to be used in the model.
         dropna (bool, optional): Whether to drop rows with missing values. Defaults to False.
         categorical_vars (list, optional): A list of categorical variable column names to be converted to dummy variables. Defaults to None.
-        drop_first (bool, optional): Whether to drop the first dummy variable for each categorical variable. Defaults to True.
+        drop_first (bool, optional): Whether to drop the first dummy variable for each categorical variable or reference_col, when given and applicable. Defaults to True.
         show_results (bool, optional): Whether to print the summary of the logistic regression results. Defaults to False.
         show_forest_plot (bool, optional): Whether to plot a forest plot of the odds ratios. Defaults to False.
         reference_col (str, optional): The reference column for adjusting odds ratios. Defaults to None.
@@ -81,8 +81,21 @@ def logit(data: pd.DataFrame, outcome: str, confounders: list, categorical_vars:
                 logger.info(f'Converted column {col} to categorical data type.')
 
         # convert categorical variables to dummy variables
-        X = pd.get_dummies(X, columns=categorical_vars, drop_first=drop_first)
-        logger.info(f'Converted categorical variables to dummy variables: {categorical_vars} (drop_first={drop_first})')
+        X = pd.get_dummies(X, columns=categorical_vars, drop_first=False)
+        logger.info(f'Converted categorical variables to dummy variables: {categorical_vars} (drop_first=False)')
+
+        # manually drop the first category for each categorical variable, except for the reference column
+        if drop_first:
+            for col in categorical_vars:
+                categories = data[col].cat.categories
+                if reference_col and reference_col in X.columns:
+                    X.drop(columns=[reference_col], inplace=True)
+                    logger.info(f'Dropped reference column: {reference_col}')
+                    continue
+                dummy_col = f"{col}_{categories[0]}"
+                if dummy_col in X.columns:
+                    X.drop(columns=[dummy_col], inplace=True)
+                    logger.info(f'Dropped first dummy variable column: {dummy_col}')
     
     # ensure binary variables are integers (0 or 1) instead of boolean
     for col in X.select_dtypes(include=['bool']).columns:
