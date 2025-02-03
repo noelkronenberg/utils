@@ -208,7 +208,7 @@ def logit(data: pd.DataFrame, outcome: str, confounders: list, categorical_vars:
         left_buffer = buffer_size
         right_buffer = buffer_size
         # left and right buffers in log scale
-        log_min_x = np.log10(min_x) if min_x > 0 else 0
+        log_min_x = np.log10(min_x) if min_x > 0 else -1
         log_max_x = np.log10(max_x) if max_x > 0 else 0
 
         # set x-axis limits with the buffer applied in log scale
