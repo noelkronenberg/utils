@@ -220,7 +220,7 @@ def logit(data: pd.DataFrame, outcome: str, confounders: list, categorical_vars:
         plt.gca().xaxis.set_minor_locator(LogLocator(base=10.0, subs='auto', numticks=10))
         tick_values = np.logspace(log_min_x - left_buffer, log_max_x + right_buffer, num=10)
         # tick_values = np.array([round(v * 2) / 2 if v > 1 else v for v in tick_values]) # round ticks > 1 to .5
-        plt.xticks(tick_values, [f'{v:.2g}' for v in tick_values])
+        plt.xticks(tick_values, [f'{v:.1g}' for v in tick_values])
         logger.info(f'Set custom log x-axis ticks: {tick_values}')
 
         plt.show()
