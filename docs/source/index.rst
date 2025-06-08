@@ -37,10 +37,3 @@ GitHub Repository
 
 You can find the source code on `GitHub <https://github.com/noelkronenberg/meda>`_. 
 Please submit bug reports or suggestions as `issues <https://github.com/noelkronenberg/meda/issues>`_. Code changes should be proposed by means of `pull requests <https://github.com/noelkronenberg/meda/pulls>`_.
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
