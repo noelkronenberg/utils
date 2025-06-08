@@ -2,18 +2,21 @@
    :maxdepth: 2
    :caption: Contents:
 
-utils package
-===================
+meda package
+============
 
-.. automodule:: utils
+.. automodule:: meda
    :members:
    :undoc-members:
    :show-inheritance:
 
-utils.analysis module
-----------------------------
+Submodules
+----------
 
-.. automodule:: utils.analysis
+meda.analysis module
+--------------------
+
+.. automodule:: meda.analysis
    :members:
    :undoc-members:
    :show-inheritance:

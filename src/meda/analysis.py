@@ -43,7 +43,7 @@ def logit(data: pd.DataFrame, outcome: str, confounders: list, categorical_vars:
 
     Examples:
         >>> import pandas as pd
-        >>> from utils.analysis import logit
+        >>> from meda.analysis import logit
         >>> data = pd.DataFrame({
         ...     'outcome': [1, 0, 1, 0, 1],
         ...     'confounder_1': [5, 3, 6, 2, 7],
@@ -264,7 +264,7 @@ def lca(data: pd.DataFrame, outcome: str = None, confounders: list = None,
     Examples:
         >>> import pandas as pd
         >>> from sklearn.datasets import make_blobs
-        >>> from utils.analysis import lca
+        >>> from meda.analysis import lca
         >>> # generate synthetic data with 3 actual latent classes
         >>> X, _ = make_blobs(n_samples=1000, centers=3, n_features=6, random_state=42)
         >>> synthetic_data = pd.DataFrame(

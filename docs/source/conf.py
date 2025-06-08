@@ -5,12 +5,12 @@
 
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../../utils')) # location of package
+sys.path.insert(0, os.path.abspath('../../meda')) # location of package
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project = 'Utils'
+project = 'MEDA'
 copyright = '2024, Noel Kronenberg'
 author = 'Noel Kronenberg'
 
@@ -25,7 +25,7 @@ extensions = [
 
 templates_path = ['_templates']
 exclude_patterns = [
-    '/utils/tests/**',
+    '/meda/tests/**',
 ]
 
 # -- Options for HTML output -------------------------------------------------

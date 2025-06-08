@@ -1,7 +1,7 @@
 import unittest
 import pandas as pd
 import numpy as np
-from utils.analysis import logit, lca
+from meda.analysis import logit, lca
 
 class TestAnalysisFunctions(unittest.TestCase):
 
