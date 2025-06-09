@@ -10,9 +10,6 @@ meda package
    :undoc-members:
    :show-inheritance:
 
-Submodules
-----------
-
 meda.analysis module
 --------------------
 
