@@ -235,7 +235,7 @@ def logit(data: pd.DataFrame, outcome: str, confounders: list, categorical_vars:
 def lca(data: pd.DataFrame, outcome: str = None, confounders: list = None, 
         n_classes: list = list(range(1, 11)), fixed_n_classes: int = None, show_metrics: bool = False, cv: int = 3, 
         return_assignments: bool = False, show_polar_plot: bool = False, cmap: str = 'tab10',
-        trained_model: StepMix = None) -> StepMix:
+        trained_model: StepMix = None, truncate_labels: bool = False) -> StepMix:
     """
     Fits a Latent Class Analysis (LCA) model to the given data using `StepMix <https://stepmix.readthedocs.io/en/latest/api.html#stepmix>`_. 
     If no outcome or confounders are provided, an unsupervised approach is used.
@@ -253,6 +253,7 @@ def lca(data: pd.DataFrame, outcome: str = None, confounders: list = None,
         show_polar_plot (bool, optional): Whether to plot a polar plot of the latent class assignments. Defaults to False.
         cmap (str, optional): The colormap to use for plotting clusters. Defaults to 'tab10'.
         trained_model (StepMix, optional): A pre-trained StepMix model to use for predictions. If provided, no new model will be trained. Defaults to None.
+        truncate_labels (bool, optional): Whether to truncate long labels in the polar plot. Defaults to False.
 
     Returns:
         StepMix or tuple: 
@@ -497,15 +498,33 @@ def lca(data: pd.DataFrame, outcome: str = None, confounders: list = None,
             ))
             logger.info(f'Added polar plot for latent class {latent_class}.')
 
+        if truncate_labels:
+            sorted_confounder_names = [label if len(label) < 20 else label[:17] + '...' for label in sorted_confounder_names]
+
         # update layout and show figure
         fig.update_layout(
             polar=dict(
-                radialaxis=dict(visible=True, showline=True, linecolor='rgba(0,0,0,0.1)', gridcolor='rgba(0,0,0,0.1)'),
-                angularaxis=dict(tickfont=dict(size=24), linecolor='grey', gridcolor='rgba(0,0,0,0.1)'),
+                radialaxis=dict(
+                    visible=True,
+                    showline=True,
+                    linecolor='rgba(0,0,0,0.1)',
+                    gridcolor='rgba(0,0,0,0.1)'
+                ),
+                angularaxis=dict(
+                    tickfont=dict(
+                        size=max(16, min(24, 360 // max(1, len(sorted_confounder_names))))
+                    ),
+                    linecolor='grey',
+                    gridcolor='rgba(0,0,0,0.1)',
+                    tickmode='array',
+                    tickvals=sorted_confounder_names,
+                    ticktext=sorted_confounder_names,
+                    ticklabelstep=1, # show all labels
+                ),
                 bgcolor='white'
             ),
             showlegend=True,
-            legend=dict(font=dict(size=24)),
+            legend=dict(font=dict(size=18)),
             width=2400,
             height=1200,
             paper_bgcolor='rgba(255,255,255)',
